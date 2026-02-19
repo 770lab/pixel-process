@@ -691,6 +691,38 @@
 
     window.addEventListener('scroll', updateProgress, { passive: true });
     updateProgress();
+
+    // Lightbox
+    const lightbox = document.createElement('div');
+    lightbox.id = 'lightbox';
+    lightbox.style.cssText = `
+        display:none;position:fixed;inset:0;z-index:9999;
+        background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);
+        align-items:center;justify-content:center;cursor:zoom-out;
+        padding:24px;
+    `;
+    lightbox.innerHTML = `<img id="lightbox-img" style="max-width:95vw;max-height:92vh;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,0.5);object-fit:contain;">
+    <div style="position:absolute;top:20px;right:28px;color:#fff;font-size:2rem;cursor:pointer;line-height:1;" id="lightbox-close">✕</div>`;
+    document.body.appendChild(lightbox);
+
+    document.querySelectorAll('.step-screenshot img').forEach(img => {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', e => {
+            e.stopPropagation();
+            document.getElementById('lightbox-img').src = img.src;
+            lightbox.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        });
+    });
+
+    lightbox.addEventListener('click', () => {
+        lightbox.style.display = 'none';
+        document.body.style.overflow = '';
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { lightbox.style.display = 'none'; document.body.style.overflow = ''; }
+    });
     </script>
 </body>
 </html>
