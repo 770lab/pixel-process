@@ -692,67 +692,40 @@
     window.addEventListener('scroll', updateProgress, { passive: true });
     updateProgress();
 
-    // Lightbox — inject CSS
-    const lbStyle = document.createElement('style');
-    lbStyle.textContent = `
-        #lb-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            width: 100vw; height: 100vh;
-            z-index: 99999;
-            background: rgba(0,0,0,0.88);
-            align-items: center;
-            justify-content: center;
-        }
-        #lb-overlay.open { display: flex !important; }
-        #lb-overlay img {
-            max-width: 92vw;
-            max-height: 90vh;
-            border-radius: 10px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-            cursor: zoom-out;
-        }
-        #lb-close-btn {
-            position: fixed;
-            top: 14px; right: 22px;
-            color: #fff;
-            font-size: 2.4rem;
-            cursor: pointer;
-            line-height: 1;
-            z-index: 100000;
-            background: rgba(0,0,0,0.4);
-            border-radius: 50%;
-            width: 44px; height: 44px;
-            display: flex; align-items: center; justify-content: center;
-        }
-    `;
-    document.head.appendChild(lbStyle);
-
-    const lbOverlay = document.createElement('div');
-    lbOverlay.id = 'lb-overlay';
-    lbOverlay.innerHTML = '<img id="lb-img" src=""><div id="lb-close-btn">×</div>';
-    document.body.appendChild(lbOverlay);
-
-    const lbImg = document.getElementById('lb-img');
-
-    function openLightbox(imgEl) {
-        lbImg.src = imgEl.src;
-        lbOverlay.classList.add('open');
-    }
-    function closeLightbox() {
-        lbOverlay.classList.remove('open');
-        setTimeout(() => { lbImg.src = ''; }, 100);
-    }
-
-    document.querySelectorAll('.step-screenshot img').forEach(img => {
+    // LIGHTBOX
+    // Pre-store all image srcs at page load to avoid re-reading large base64 strings
+    const imageCache = [];
+    document.querySelectorAll('.step-screenshot img').forEach((img, i) => {
+        imageCache.push(img.src);
+        img.dataset.lbIndex = i;
         img.style.cursor = 'zoom-in';
-        img.addEventListener('click', () => openLightbox(img));
     });
 
-    lbOverlay.addEventListener('click', closeLightbox);
-    document.getElementById('lb-close-btn').addEventListener('click', closeLightbox);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+    // Create overlay HTML directly in the page
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="lb" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:999999;align-items:center;justify-content:center;box-sizing:border-box;padding:16px;">
+            <img id="lb-i" style="max-width:92vw;max-height:90vh;border-radius:8px;display:block;object-fit:contain;">
+            <button onclick="document.getElementById('lb').style.display='none';" style="position:fixed;top:12px;right:16px;background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:2rem;width:48px;height:48px;border-radius:50%;cursor:pointer;line-height:1;">×</button>
+        </div>
+    `);
+
+    document.querySelectorAll('.step-screenshot img').forEach(img => {
+        img.addEventListener('click', function() {
+            const idx = parseInt(this.dataset.lbIndex);
+            const lb = document.getElementById('lb');
+            const lbi = document.getElementById('lb-i');
+            lbi.src = imageCache[idx];
+            lb.style.display = 'flex';
+        });
+    });
+
+    document.getElementById('lb').addEventListener('click', function(e) {
+        if (e.target === this) this.style.display = 'none';
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') document.getElementById('lb').style.display = 'none';
+    });
     </script>
 </body>
 </html>
