@@ -692,37 +692,67 @@
     window.addEventListener('scroll', updateProgress, { passive: true });
     updateProgress();
 
-    // Lightbox
-    const lightbox = document.createElement('div');
-    lightbox.id = 'lightbox';
-    lightbox.style.cssText = `
-        display:none;position:fixed;inset:0;z-index:9999;
-        background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);
-        align-items:center;justify-content:center;cursor:zoom-out;
-        padding:24px;
+    // Lightbox — inject CSS
+    const lbStyle = document.createElement('style');
+    lbStyle.textContent = `
+        #lb-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100vw; height: 100vh;
+            z-index: 99999;
+            background: rgba(0,0,0,0.88);
+            align-items: center;
+            justify-content: center;
+        }
+        #lb-overlay.open { display: flex !important; }
+        #lb-overlay img {
+            max-width: 92vw;
+            max-height: 90vh;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            cursor: zoom-out;
+        }
+        #lb-close-btn {
+            position: fixed;
+            top: 14px; right: 22px;
+            color: #fff;
+            font-size: 2.4rem;
+            cursor: pointer;
+            line-height: 1;
+            z-index: 100000;
+            background: rgba(0,0,0,0.4);
+            border-radius: 50%;
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+        }
     `;
-    lightbox.innerHTML = `<img id="lightbox-img" style="max-width:95vw;max-height:92vh;border-radius:12px;box-shadow:0 24px 80px rgba(0,0,0,0.5);object-fit:contain;">
-    <div style="position:absolute;top:20px;right:28px;color:#fff;font-size:2rem;cursor:pointer;line-height:1;" id="lightbox-close">✕</div>`;
-    document.body.appendChild(lightbox);
+    document.head.appendChild(lbStyle);
+
+    const lbOverlay = document.createElement('div');
+    lbOverlay.id = 'lb-overlay';
+    lbOverlay.innerHTML = '<img id="lb-img" src=""><div id="lb-close-btn">×</div>';
+    document.body.appendChild(lbOverlay);
+
+    const lbImg = document.getElementById('lb-img');
+
+    function openLightbox(imgEl) {
+        lbImg.src = imgEl.src;
+        lbOverlay.classList.add('open');
+    }
+    function closeLightbox() {
+        lbOverlay.classList.remove('open');
+        setTimeout(() => { lbImg.src = ''; }, 100);
+    }
 
     document.querySelectorAll('.step-screenshot img').forEach(img => {
         img.style.cursor = 'zoom-in';
-        img.addEventListener('click', e => {
-            e.stopPropagation();
-            document.getElementById('lightbox-img').src = img.src;
-            lightbox.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        });
+        img.addEventListener('click', () => openLightbox(img));
     });
 
-    lightbox.addEventListener('click', () => {
-        lightbox.style.display = 'none';
-        document.body.style.overflow = '';
-    });
-
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { lightbox.style.display = 'none'; document.body.style.overflow = ''; }
-    });
+    lbOverlay.addEventListener('click', closeLightbox);
+    document.getElementById('lb-close-btn').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
     </script>
 </body>
 </html>
